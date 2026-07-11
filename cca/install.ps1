@@ -17,6 +17,14 @@ function Have($name) {
   return $null -ne (Get-Command $name -ErrorAction SilentlyContinue)
 }
 
+function NodeOk {
+  if (-not (Have node)) { return $false }
+  $parts = (node -p 'process.versions.node').Split('.')
+  $major = [int]$parts[0]
+  $minor = [int]$parts[1]
+  return ($major -gt 23) -or ($major -eq 23 -and $minor -ge 6)
+}
+
 function In-UserPath($target) {
   $current = [Environment]::GetEnvironmentVariable('Path', 'User')
   if (-not $current) { return $false }
@@ -66,8 +74,9 @@ else {
 }
 
 if (-not $Runtime) {
-  if (Have node) { $Runtime = 'node' }
+  if (NodeOk) { $Runtime = 'node' }
   elseif (Have bun) { $Runtime = 'bun' }
+  elseif (Have node) { throw "node $(node -p 'process.versions.node') cannot run TypeScript without a flag; use node >= 23.6 or install bun" }
   else { throw 'need node (>=23.6) or bun on PATH' }
 }
 

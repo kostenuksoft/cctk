@@ -25,6 +25,15 @@ done
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+node_ok() {
+  have node || return 1
+  ver=$(node -p 'process.versions.node')
+  major=${ver%%.*}
+  rest=${ver#*.}
+  minor=${rest%%.*}
+  [ "$major" -gt 23 ] || { [ "$major" -eq 23 ] && [ "$minor" -ge 6 ]; }
+}
+
 if [ "$ACTION" = uninstall ]; then
   if [ -f "$SHIM" ]; then
     rm -f "$SHIM"
@@ -71,10 +80,13 @@ else
 fi
 
 if [ -z "$RUNTIME" ]; then
-  if have node; then
+  if node_ok; then
     RUNTIME=node
   elif have bun; then
     RUNTIME=bun
+  elif have node; then
+    echo "node $(node -p 'process.versions.node') cannot run TypeScript without a flag; use node >= 23.6 or install bun" >&2
+    exit 1
   else
     echo "need node (>=23.6) or bun on PATH" >&2
     exit 1
