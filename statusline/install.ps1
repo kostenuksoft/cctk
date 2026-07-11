@@ -21,7 +21,8 @@ $py = if (Have python) { 'python' } elseif (Have python3) { 'python3' } else { t
 
 $edit = @'
 import json, os, shutil, sys, time
-path, cmd, remove = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
+path, remove = sys.argv[1], sys.argv[2] == "1"
+cmd = sys.argv[3] if len(sys.argv) > 3 else ""
 data = {}
 if os.path.exists(path):
     shutil.copy(path, path + ".bak-" + time.strftime("%Y%m%d%H%M%S"))
@@ -50,7 +51,7 @@ else:
 '@
 
 if ($Uninstall) {
-  $edit | & $py - $settings '' '1'
+  $edit | & $py - $settings '1'
   if (Test-Path $dest) { Remove-Item $dest; Write-Host "removed $dest" }
   return
 }
@@ -83,5 +84,5 @@ if ($src -ne $dest) { Copy-Item -Path $src -Destination $dest -Force }
 Write-Host "installed statusline -> $dest"
 
 $destCmd = $dest -replace '\\', '/'
-$edit | & $py - $settings "$py `"$destCmd`"" '0'
+$edit | & $py - $settings '0' "$py `"$destCmd`""
 Write-Host 'done - open a new Claude Code session to see it.'
