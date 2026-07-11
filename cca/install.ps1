@@ -1,6 +1,7 @@
 param(
   [switch]$Uninstall,
-  [ValidateSet('node', 'bun')][string]$Runtime
+  [ValidateSet('node', 'bun')][string]$Runtime,
+  [ValidateSet('bun', 'node')][string]$Setup
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +24,20 @@ function NodeOk {
   $major = [int]$parts[0]
   $minor = [int]$parts[1]
   return ($major -gt 23) -or ($major -eq 23 -and $minor -ge 6)
+}
+
+function Setup-Runtime($choice) {
+  if ($choice -eq 'bun') {
+    Write-Host 'installing bun (bun.sh)...'
+    Invoke-RestMethod 'https://bun.sh/install.ps1' | Invoke-Expression
+    $bunBin = Join-Path $env:USERPROFILE '.bun\bin'
+    if (Test-Path $bunBin) { $env:Path = "$bunBin;$env:Path" }
+  }
+  else {
+    if (-not (Have winget)) { throw 'winget not found - update node from https://nodejs.org' }
+    Write-Host 'updating node via winget...'
+    winget install --exact --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements
+  }
 }
 
 function In-UserPath($target) {
@@ -71,6 +86,11 @@ else {
     throw "download did not contain cca/cca.ts - is the repo public and CCTK_REF=$ref correct?"
   }
   Write-Host "fetched into $cctkHome"
+}
+
+if ($Setup) {
+  Setup-Runtime $Setup
+  if ($Setup -eq 'bun' -and -not $Runtime) { $Runtime = 'bun' }
 }
 
 if (-not $Runtime) {

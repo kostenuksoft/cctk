@@ -10,18 +10,27 @@ BIN="${CCA_BIN_DIR:-$HOME/.local/bin}"
 SHIM="$BIN/cca"
 ACTION=install
 RUNTIME=
+SETUP=
 
-for arg in "$@"; do
-  case "$arg" in
+while [ $# -gt 0 ]; do
+  case "$1" in
     --uninstall | -u | remove) ACTION=uninstall ;;
     --node) RUNTIME=node ;;
     --bun) RUNTIME=bun ;;
+    --setup) shift; SETUP=${1:-} ;;
+    --setup=*) SETUP=${1#*=} ;;
     *)
-      echo "unknown option: $arg" >&2
+      echo "unknown option: $1" >&2
       exit 1
       ;;
   esac
+  shift
 done
+
+case "$SETUP" in
+  '' | bun | node) : ;;
+  *) echo "--setup must be bun or node" >&2; exit 1 ;;
+esac
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -32,6 +41,31 @@ node_ok() {
   rest=${ver#*.}
   minor=${rest%%.*}
   [ "$major" -gt 23 ] || { [ "$major" -eq 23 ] && [ "$minor" -ge 6 ]; }
+}
+
+setup_runtime() {
+  if [ "$1" = bun ]; then
+    echo "installing bun (bun.sh)..."
+    have curl || have wget || {
+      echo "need curl or wget to install bun" >&2
+      exit 1
+    }
+    if have curl; then
+      curl -fsSL https://bun.sh/install | bash
+    else
+      wget -qO- https://bun.sh/install | bash
+    fi
+    if [ -d "$HOME/.bun/bin" ]; then PATH="$HOME/.bun/bin:$PATH"; fi
+  else
+    if have n; then
+      n lts
+    elif have brew; then
+      brew upgrade node || brew install node
+    else
+      echo "no supported node updater (n or brew) found - update node from https://nodejs.org" >&2
+      exit 1
+    fi
+  fi
 }
 
 if [ "$ACTION" = uninstall ]; then
@@ -88,6 +122,11 @@ else
     exit 1
   }
   echo "fetched into $CCTK_HOME"
+fi
+
+if [ -n "$SETUP" ]; then
+  setup_runtime "$SETUP"
+  if [ "$SETUP" = bun ] && [ -z "$RUNTIME" ]; then RUNTIME=bun; fi
 fi
 
 if [ -z "$RUNTIME" ]; then
