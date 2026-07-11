@@ -40,7 +40,7 @@ merged = dict(current) if isinstance(current, dict) else {}
 merged["type"] = "command"
 merged["command"] = cmd
 if current == merged:
-    print("statusLine already points here — no change")
+    print("statusLine already points here - no change")
 else:
     data["statusLine"] = merged
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -74,7 +74,7 @@ else {
   Remove-Item -Recurse -Force $tmp
   $src = Join-Path $cctkHome 'statusline\statusline.py'
   if (-not (Test-Path $src)) {
-    throw "download did not contain statusline\statusline.py — is the repo public and CCTK_REF=$ref correct?"
+    throw "download did not contain statusline\statusline.py - is the repo public and CCTK_REF=$ref correct?"
   }
 }
 
@@ -82,5 +82,6 @@ New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
 if ($src -ne $dest) { Copy-Item -Path $src -Destination $dest -Force }
 Write-Host "installed statusline -> $dest"
 
-$edit | & $py - $settings "$py `"$dest`"" '0'
-Write-Host 'done — open a new Claude Code session to see it.'
+$destCmd = $dest -replace '\\', '/'
+$edit | & $py - $settings "$py `"$destCmd`"" '0'
+Write-Host 'done - open a new Claude Code session to see it.'

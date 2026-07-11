@@ -60,7 +60,7 @@ else {
   Remove-Item -Recurse -Force $tmp
   $src = Join-Path $cctkHome 'cca'
   if (-not (Test-Path (Join-Path $src 'cca.ts'))) {
-    throw "download did not contain cca/cca.ts — is the repo public and CCTK_REF=$ref correct?"
+    throw "download did not contain cca/cca.ts - is the repo public and CCTK_REF=$ref correct?"
   }
   Write-Host "fetched into $cctkHome"
 }
