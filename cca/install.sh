@@ -41,6 +41,17 @@ if [ "$ACTION" = uninstall ]; then
   else
     echo "no cca shim at $SHIM"
   fi
+  case "$(basename "${SHELL:-sh}")" in
+    zsh) RC="${ZDOTDIR:-$HOME}/.zshrc"; LINE="export PATH=\"$BIN:\$PATH\"" ;;
+    bash) RC="$HOME/.bashrc"; LINE="export PATH=\"$BIN:\$PATH\"" ;;
+    fish) RC="$HOME/.config/fish/config.fish"; LINE="fish_add_path $BIN" ;;
+    *) RC="$HOME/.profile"; LINE="export PATH=\"$BIN:\$PATH\"" ;;
+  esac
+  if [ -f "$RC" ] && grep -qxF "$LINE" "$RC"; then
+    grep -vxF "$LINE" "$RC" > "$RC.cca-tmp" || true
+    mv "$RC.cca-tmp" "$RC"
+    echo "removed $BIN from PATH in $RC — restart your shell"
+  fi
   echo "note: fetched source (if any) left at $CCTK_HOME — remove it by hand if you want it gone"
   exit 0
 fi
